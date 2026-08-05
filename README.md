@@ -1,4 +1,4 @@
-# TeamName_KLA_PS01 — AI-Based Restoration of Degraded Semiconductor Inspection Images
+# Arshiya_KLA_PS01 — AI-Based Restoration of Degraded Semiconductor Inspection Images
 
 SEMICON India Hackathon 2026 — Track 1 (KLA)
 
