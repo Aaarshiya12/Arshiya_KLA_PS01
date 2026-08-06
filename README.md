@@ -1,86 +1,244 @@
-# Arshiya_KLA_PS01 — AI-Based Restoration of Degraded Semiconductor Inspection Images
+<div align="center">
 
-SEMICON India Hackathon 2026 — Track 1 (KLA)
+# KLA Image Restoration & Super-Resolution
 
-## Problem
+### Noise-Aware Deep Learning for Semiconductor Image Enhancement
 
-Reconstruct a clean, full-resolution semiconductor inspection image from a degraded input that has been simultaneously downsampled (2x), speckle-noised (multiplicative), and Gaussian-noised (edge softening). Evaluated on out-of-distribution structure types and on inference speed.
+**Team Name: [YOUR TEAM NAME]**
 
-## Approach
+KLA Hackathon 2026 — PS01
 
-A single-stage, noise-conditioned U-Net with residual bottleneck and PixelShuffle super-resolution head, ending in two branches:
-- **Restoration head** — the restored image
-- **Confidence head** — a self-supervised per-pixel confidence map, trained against an error-derived target
+</div>
 
-The model takes the degraded image *and* a cheaply-estimated per-image noise-level map as input, so denoising strength adapts per-image instead of assuming a fixed noise level. See `src/model.py`.
+---
 
-**Loss**: Charbonnier + SSIM + frequency-domain + clip-consistency + confidence terms. See `src/losses.py` for the full formulation and reasoning.
+## Overview
 
-Two model sizes are provided for a speed/quality Pareto comparison:
+This project presents a lightweight deep-learning pipeline for restoring degraded semiconductor images.
 
-| Model | Params | CPU inference (untrained, measured) |
-|---|---|---|
-| small | 2.77M | ~350 ms/image |
-| large | 11.06M | ~790 ms/image |
+The model performs two tasks jointly:
 
-(GPU numbers will be substantially lower; these are prototyping-stage CPU benchmarks.)
+- Noise suppression
+- 2× image super-resolution
 
-## Repo structure
+The network converts a degraded **128×128 NoisyLR image** into a restored **256×256 image** while preserving structural information.
 
-```
-src/
-  degrade.py           # speckle + gaussian + downsample degradation simulator
-  noise_estimator.py   # cheap per-image noise-level estimation (conditioning input)
-  model.py             # U-Net backbone, noise conditioning, PixelShuffle, dual heads
-  losses.py            # Charbonnier + SSIM + frequency + clip-consistency + confidence loss
-  make_demo_figure.py  # generates before/after demo + speed benchmark
-  evaluate.py           # standalone evaluation script (tested on fresh environment)
-data/
-  raw/                 # KLA-provided pairs go here once released
-  synthetic_hard/      # extra synthetic hard-case pairs for generalization
-weights/                # trained model weights (added after training phase)
-outputs/                # restored images + demo figures
-```
+---
 
-## Status (registration stage)
+## Model Architecture
 
-This repo currently contains the full pipeline skeleton and architecture,
-verified to run end-to-end on synthetic data. Model weights are untrained —
-training begins in the next phase once real KLA data is released. All
-scripts below have been tested and run successfully:
+```mermaid
+flowchart LR
 
-- `python src/degrade.py` — generates a synthetic degraded/clean pair
-- `python src/model.py` — builds both model sizes, verifies forward pass and param counts
-- `python src/losses.py` — verifies the combined loss computes and backpropagates
-- `python src/make_demo_figure.py` — produces `outputs/demo_before_after.png` and a speed benchmark
-- `python src/evaluate.py --input_dir data/raw/degraded --output_dir outputs --model_size small --gt_dir data/raw/clean` — runs the full evaluation pipeline
+    A["NoisyLR Input<br/>128 × 128"] --> B["Noise Estimator"]
 
-## Setup
+    B --> C["Estimated Noise Map"]
 
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+    A --> D["Noise-Conditioned<br/>U-Net Backbone"]
+    C --> D
+
+    D --> E["Restoration Head"]
+    D --> F["Confidence Head"]
+
+    E --> G["Restored Features"]
+    F --> H["Confidence Map"]
+
+    G --> I["PixelShuffle<br/>2× Super-Resolution"]
+
+    I --> J["Restored Output<br/>256 × 256"]
+
+    classDef input fill:#172033,stroke:#7aa2f7,stroke-width:2px,color:#ffffff;
+    classDef processing fill:#1c2538,stroke:#89b4fa,stroke-width:2px,color:#ffffff;
+    classDef head fill:#202b40,stroke:#a6adc8,stroke-width:2px,color:#ffffff;
+    classDef output fill:#162a26,stroke:#94e2d5,stroke-width:2px,color:#ffffff;
+
+    class A input;
+    class B,C,D processing;
+    class E,F,G,H,I head;
+    class J output;
 ```
 
-## Planned novelties
+The architecture first estimates the degradation present in the low-resolution input. The estimated noise information conditions the U-Net restoration backbone. The network then produces restoration and confidence outputs before applying PixelShuffle for 2× spatial upscaling.
 
-1. **Noise-level conditioning** — per-image noise estimate fed as an extra input channel
-2. **Physics-informed loss** — Charbonnier + SSIM + frequency + clip-consistency, tuned for multiplicative speckle rather than assuming additive noise
-3. **Self-supervised confidence maps** — flags per-pixel restoration reliability
-4. **Speed-quality Pareto reporting** — small vs. large variant, explicit tradeoff
-5. **Synthetic hard-case augmentation** — training beyond the given noise range for out-of-distribution generalization
+---
 
-## Planned evaluation metrics (post-training)
+## Validation Results
 
-| Model | SSIM | PSNR | LPIPS | ms/image (GPU) |
-|---|---|---|---|---|
-| small | TBD | TBD | TBD | TBD |
-| large | TBD | TBD | TBD | TBD |
+The trained model was evaluated on **320 validation images**.
 
-## References
+<div align="center">
 
-1. Charbonnier et al., "Two deterministic half-quadratic regularization algorithms for computed imaging," ICIP 1994.
-2. Shi et al., "Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network" (PixelShuffle / ESPCN), CVPR 2016.
-3. Wang et al., "Image Quality Assessment: From Error Visibility to Structural Similarity" (SSIM), IEEE TIP 2004.
-4. Ronneberger et al., "U-Net: Convolutional Networks for Biomedical Image Segmentation," MICCAI 2015.
+| Metric | Result |
+|:---|:---:|
+| **PSNR** | **27.01 dB** |
+| **SSIM** | **0.7212** |
+| **LPIPS** | **0.3119** |
+
+</div>
+
+### Example Restoration
+
+<div align="center">
+
+<img src="outputs/KLA_real_restoration.png" width="900"/>
+
+</div>
+
+The comparison shows the degraded NoisyLR input, the restored model output, and the corresponding ground-truth image.
+
+---
+
+## Inference Performance
+
+Inference performance was measured on an **NVIDIA Tesla T4 GPU** after GPU warm-up.
+
+<div align="center">
+
+| Performance Metric | Measured Result |
+|:---|:---:|
+| **Mean Inference Time** | **9.33 ms/image** |
+| **Median Inference Time** | **6.89 ms/image** |
+| **Throughput** | **107.13 FPS** |
+| **Model Parameters** | **~2.77M** |
+
+</div>
+
+> **Note:** These inference measurements were obtained on an NVIDIA Tesla T4 GPU and do not represent performance on the official KLA H100 evaluation environment.
+
+---
+
+## Processing Pipeline
+
+```mermaid
+flowchart LR
+
+    A["Degraded<br/>128 × 128 Image"]
+    --> B["Noise<br/>Estimation"]
+
+    B --> C["Noise-Aware<br/>Feature Extraction"]
+
+    C --> D["U-Net<br/>Restoration"]
+
+    D --> E["Restoration +<br/>Confidence Prediction"]
+
+    E --> F["PixelShuffle<br/>2× Upscaling"]
+
+    F --> G["Restored<br/>256 × 256 Image"]
+
+    classDef stage fill:#171f2e,stroke:#89b4fa,stroke-width:2px,color:#ffffff;
+    classDef result fill:#162a26,stroke:#94e2d5,stroke-width:2px,color:#ffffff;
+
+    class A,B,C,D,E,F stage;
+    class G result;
+```
+
+---
+
+## Technology Stack
+
+<div align="center">
+
+| Component | Technology |
+|:---|:---|
+| **Deep Learning Framework** | PyTorch |
+| **Programming Language** | Python |
+| **GPU Environment** | NVIDIA Tesla T4 |
+| **Image Processing** | NumPy |
+| **Perceptual Evaluation** | LPIPS |
+| **Version Control** | Git / GitHub |
+
+</div>
+
+---
+
+## Dataset
+
+The dataset contains paired semiconductor images:
+
+```text
+train/
+│
+├── GT/
+│   ├── 000000.npy
+│   ├── 000001.npy
+│   └── ...
+│
+└── NoisyLR/
+    ├── 000000.npy
+    ├── 000001.npy
+    └── ...
+```
+
+| Dataset Property | Value |
+|:---|:---:|
+| Ground Truth Images | 3200 |
+| NoisyLR Images | 3200 |
+| NoisyLR Resolution | 128 × 128 |
+| Ground Truth Resolution | 256 × 256 |
+| Upscaling Factor | 2× |
+
+---
+
+## Repository Structure
+
+```text
+Arshiya_KLA_PS01/
+│
+├── README.md
+├── requirements.txt
+├── kla_best_model.pt
+│
+├── src/
+│   └── ...
+│
+└── outputs/
+    └── KLA_real_restoration.png
+```
+
+---
+
+## Trained Model
+
+The repository includes the trained model weights:
+
+```text
+kla_best_model.pt
+```
+
+The final checkpoint corresponds to the model selected using validation performance after **10 training epochs**.
+
+---
+
+## Key Features
+
+- Joint image denoising and 2× super-resolution
+- Noise-aware restoration architecture
+- Dedicated noise-estimation module
+- U-Net-based restoration backbone
+- Confidence prediction branch
+- PixelShuffle-based upscaling
+- Approximately **2.77 million parameters**
+- GPU inference at approximately **107 FPS** on Tesla T4
+- Quantitative evaluation using PSNR, SSIM, and LPIPS
+
+---
+
+## Final Performance Summary
+
+<div align="center">
+
+| PSNR | SSIM | LPIPS | Throughput |
+|:---:|:---:|:---:|:---:|
+| **27.01 dB** | **0.7212** | **0.3119** | **107.13 FPS** |
+
+</div>
+
+---
+
+<div align="center">
+
+### KLA Hackathon 2026 — PS01
+
+**Team [YOUR TEAM NAME]**
+
+</div>
