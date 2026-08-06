@@ -8,7 +8,7 @@
 
 **Arshiya Agarwal | Minal Pramod Borkar | Srujan Pratap Powar | Aadya Priyadarshi**
 
-Semicon Hackathon 2026 — PS01
+Semicon Hackathon 2026 — PS02
 
 </div>
 
@@ -375,7 +375,7 @@ The trained model achieved:
 
 ### KLA Image Restoration & Super-Resolution
 
-**KLA Hackathon 2026 — PS01**
+**Semicon Hackathon 2026 — PS02**
 
 **Team: NanoSight**
 
