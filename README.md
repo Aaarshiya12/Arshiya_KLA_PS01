@@ -33,32 +33,28 @@ The proposed system combines noise estimation, noise-conditioned image restorati
 
 ```mermaid
 flowchart LR
-
-    A["NoisyLR Input<br/>128 × 128"] --> B["Noise<br/>Estimator"]
-    B --> C["Estimated<br/>Noise Map"]
-
-    A --> D["Noise-Conditioned<br/>U-Net"]
+    A["NoisyLR Input<br/>128 x 128"] --> B["Noise Estimator"]
+    B --> C["Estimated Noise Map"]
+    A --> D["Noise-Conditioned U-Net"]
     C --> D
 
-    D --> E["Restoration<br/>Head"]
-    D --> F["Confidence<br/>Head"]
+    D --> E["Restoration Head"]
+    D --> F["Confidence Head"]
 
-    E --> G["PixelShuffle<br/>2× Upsampling"]
-    G --> H["Restored Image<br/>256 × 256"]
+    E --> G["PixelShuffle 2x Upsampling"]
+    G --> H["Restored Image 256 x 256"]
 
-    F --> I["Confidence<br/>Map"]
+    F --> I["Confidence Map"]
 
-    classDef input fill:#eaf2ff,stroke:#4c78a8,stroke-width:2px,color:#111;
-    classDef noise fill:#edf7ea,stroke:#59a14f,stroke-width:2px,color:#111;
-    classDef network fill:#eaf2ff,stroke:#4c78a8,stroke-width:2px,color:#111;
-    classDef head fill:#fff4df,stroke:#e39c37,stroke-width:2px,color:#111;
-    classDef output fill:#e4f7ef,stroke:#2a9d8f,stroke-width:2px,color:#111;
+    classDef blue fill:#0969da,stroke:#58a6ff,color:#ffffff
+    classDef green fill:#1a7f37,stroke:#3fb950,color:#ffffff
+    classDef purple fill:#8250df,stroke:#a371f7,color:#ffffff
+    classDef orange fill:#9a6700,stroke:#d29922,color:#ffffff
 
-    class A input;
-    class B,C noise;
-    class D,G network;
-    class E,F head;
-    class H,I output;
+    class A,H blue
+    class B,C green
+    class D,F,I purple
+    class E,G orange
 ```
 
 ### Architecture Components
