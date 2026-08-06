@@ -4,7 +4,7 @@
 
 ### Noise-Aware Deep Learning for Semiconductor Image Enhancement
 
-**Team Name: SiliconSight**
+**Team Name: NanoSight**
 
 **Arshiya Agarwal | Minal Pramod Borkar | Srujan Pratap Powar | Aadya Priyadarshi**
 
@@ -377,7 +377,7 @@ The trained model achieved:
 
 **KLA Hackathon 2026 — PS01**
 
-**Team: SiliconSight**
+**Team: NanoSight**
 
 **Arshiya Agarwal | Minal Pramod Borkar | Srujan Pratap Powar | Aadya Priyadarshi**
 
