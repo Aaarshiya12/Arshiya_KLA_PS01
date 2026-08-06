@@ -4,7 +4,9 @@
 
 ### Noise-Aware Deep Learning for Semiconductor Image Enhancement
 
-**Team Name: [YOUR TEAM NAME]**
+**Team Name: YOUR_TEAM_NAME**
+
+**Arshiya Agarwal | SECOND_MEMBER_NAME**
 
 KLA Hackathon 2026 — PS01
 
@@ -18,8 +20,8 @@ This project presents a lightweight deep-learning pipeline for restoring degrade
 
 The model performs two tasks jointly:
 
-- Noise suppression
-- 2× image super-resolution
+- **Noise suppression**
+- **2× image super-resolution**
 
 The network converts a degraded **128×128 NoisyLR image** into a restored **256×256 image** while preserving structural information.
 
@@ -27,133 +29,129 @@ The network converts a degraded **128×128 NoisyLR image** into a restored **256
 
 ## Model Architecture
 
+The proposed system combines noise estimation, noise-conditioned image restoration, super-resolution, and confidence prediction in a single pipeline.
+
 ```mermaid
 flowchart LR
 
-    A["NoisyLR Input<br/>128 × 128"] --> B["Noise Estimator"]
+    A["NoisyLR Input<br/>128 × 128"] --> B["Noise<br/>Estimator"]
+    B --> C["Estimated<br/>Noise Map"]
 
-    B --> C["Estimated Noise Map"]
-
-    A --> D["Noise-Conditioned<br/>U-Net Backbone"]
+    A --> D["Noise-Conditioned<br/>U-Net"]
     C --> D
 
-    D --> E["Restoration Head"]
-    D --> F["Confidence Head"]
+    D --> E["Restoration<br/>Head"]
+    D --> F["Confidence<br/>Head"]
 
-    E --> G["Restored Features"]
-    F --> H["Confidence Map"]
+    E --> G["PixelShuffle<br/>2× Upsampling"]
+    G --> H["Restored Image<br/>256 × 256"]
 
-    G --> I["PixelShuffle<br/>2× Super-Resolution"]
+    F --> I["Confidence<br/>Map"]
 
-    I --> J["Restored Output<br/>256 × 256"]
-
-    classDef input fill:#172033,stroke:#7aa2f7,stroke-width:2px,color:#ffffff;
-    classDef processing fill:#1c2538,stroke:#89b4fa,stroke-width:2px,color:#ffffff;
-    classDef head fill:#202b40,stroke:#a6adc8,stroke-width:2px,color:#ffffff;
-    classDef output fill:#162a26,stroke:#94e2d5,stroke-width:2px,color:#ffffff;
+    classDef input fill:#eaf2ff,stroke:#4c78a8,stroke-width:2px,color:#111;
+    classDef noise fill:#edf7ea,stroke:#59a14f,stroke-width:2px,color:#111;
+    classDef network fill:#eaf2ff,stroke:#4c78a8,stroke-width:2px,color:#111;
+    classDef head fill:#fff4df,stroke:#e39c37,stroke-width:2px,color:#111;
+    classDef output fill:#e4f7ef,stroke:#2a9d8f,stroke-width:2px,color:#111;
 
     class A input;
-    class B,C,D processing;
-    class E,F,G,H,I head;
-    class J output;
+    class B,C noise;
+    class D,G network;
+    class E,F head;
+    class H,I output;
 ```
 
-The architecture first estimates the degradation present in the low-resolution input. The estimated noise information conditions the U-Net restoration backbone. The network then produces restoration and confidence outputs before applying PixelShuffle for 2× spatial upscaling.
+### Architecture Components
+
+| Component | Function |
+|---|---|
+| **Noise Estimator** | Estimates degradation characteristics from the NoisyLR input |
+| **Noise-Conditioned U-Net** | Performs feature extraction and reconstruction conditioned on estimated noise |
+| **Restoration Head** | Generates features required for image reconstruction |
+| **PixelShuffle** | Performs learned 2× spatial upscaling |
+| **Confidence Head** | Produces an auxiliary confidence map for the restored prediction |
+
+The architecture performs denoising and super-resolution jointly while maintaining a relatively small parameter count.
 
 ---
 
-## Validation Results
+## Problem Statement
 
-The trained model was evaluated on **320 validation images**.
+Semiconductor images may contain multiple simultaneous degradations that affect accurate inspection and analysis.
 
-<div align="center">
+The project addresses:
 
-| Metric | Result |
-|:---|:---:|
-| **PSNR** | **27.01 dB** |
-| **SSIM** | **0.7212** |
-| **LPIPS** | **0.3119** |
+| Degradation | Effect | Restoration Objective |
+|---|---|---|
+| **Speckle Noise** | Grainy pixel-level distortion | Suppress noise while retaining structural information |
+| **Gaussian Noise** | Reduced edge clarity and fine detail | Recover image structure and contrast |
+| **Resolution Reduction** | Loss of spatial information | Reconstruct a high-resolution image |
 
-</div>
-
-### Example Restoration
-
-<div align="center">
-
-<img src="outputs/KLA_real_restoration.png" width="900"/>
-
-</div>
-
-The comparison shows the degraded NoisyLR input, the restored model output, and the corresponding ground-truth image.
+Instead of treating denoising and super-resolution as separate sequential tasks, the proposed model learns a **joint restoration mapping**.
 
 ---
 
-## Inference Performance
+## Key Features
 
-Inference performance was measured on an **NVIDIA Tesla T4 GPU** after GPU warm-up.
+### Noise-Aware Restoration
 
-<div align="center">
+A dedicated noise estimator extracts degradation information from the input. This information conditions the restoration network and allows it to adapt to variations in image degradation.
 
-| Performance Metric | Measured Result |
-|:---|:---:|
-| **Mean Inference Time** | **9.33 ms/image** |
-| **Median Inference Time** | **6.89 ms/image** |
-| **Throughput** | **107.13 FPS** |
-| **Model Parameters** | **~2.77M** |
+### Joint Denoising and Super-Resolution
 
-</div>
+The network performs noise removal and **2× spatial reconstruction within a single model**.
 
-> **Note:** These inference measurements were obtained on an NVIDIA Tesla T4 GPU and do not represent performance on the official KLA H100 evaluation environment.
+### Lightweight Architecture
+
+The trained model contains approximately:
+
+> **2.77 million parameters**
+
+This keeps the network computationally efficient while maintaining restoration capability.
+
+### Confidence Prediction
+
+An auxiliary confidence head produces a confidence map alongside the reconstructed image.
+
+### Composite Training Objective
+
+Multiple complementary loss functions are combined to optimize pixel accuracy, structural similarity, high-frequency reconstruction, and confidence estimation.
 
 ---
 
-## Processing Pipeline
+## Training Objective
 
-```mermaid
-flowchart LR
+The model is optimized using a combination of:
 
-    A["Degraded<br/>128 × 128 Image"]
-    --> B["Noise<br/>Estimation"]
-
-    B --> C["Noise-Aware<br/>Feature Extraction"]
-
-    C --> D["U-Net<br/>Restoration"]
-
-    D --> E["Restoration +<br/>Confidence Prediction"]
-
-    E --> F["PixelShuffle<br/>2× Upscaling"]
-
-    F --> G["Restored<br/>256 × 256 Image"]
-
-    classDef stage fill:#171f2e,stroke:#89b4fa,stroke-width:2px,color:#ffffff;
-    classDef result fill:#162a26,stroke:#94e2d5,stroke-width:2px,color:#ffffff;
-
-    class A,B,C,D,E,F stage;
-    class G result;
+```text
+Charbonnier Loss
+        +
+SSIM Loss
+        +
+Frequency Loss
+        +
+Confidence Regularization
 ```
 
----
-
-## Technology Stack
-
-<div align="center">
-
-| Component | Technology |
-|:---|:---|
-| **Deep Learning Framework** | PyTorch |
-| **Programming Language** | Python |
-| **GPU Environment** | NVIDIA Tesla T4 |
-| **Image Processing** | NumPy |
-| **Perceptual Evaluation** | LPIPS |
-| **Version Control** | Git / GitHub |
-
-</div>
+| Loss Component | Purpose |
+|---|---|
+| **Charbonnier Loss** | Robust pixel-level reconstruction |
+| **SSIM Loss** | Structural preservation |
+| **Frequency Loss** | Recovery of fine details and high-frequency information |
+| **Confidence Regularization** | Regularization of the auxiliary confidence prediction |
 
 ---
 
 ## Dataset
 
-The dataset contains paired semiconductor images:
+The provided training dataset contains **3,200 paired grayscale samples**.
+
+| Dataset Component | Resolution | Description |
+|---|---:|---|
+| **NoisyLR** | 128 × 128 | Degraded low-resolution input |
+| **Ground Truth (GT)** | 256 × 256 | Clean high-resolution target |
+
+Dataset structure:
 
 ```text
 train/
@@ -161,21 +159,82 @@ train/
 ├── GT/
 │   ├── 000000.npy
 │   ├── 000001.npy
+│   ├── 000002.npy
 │   └── ...
 │
 └── NoisyLR/
     ├── 000000.npy
     ├── 000001.npy
+    ├── 000002.npy
     └── ...
 ```
 
-| Dataset Property | Value |
-|:---|:---:|
-| Ground Truth Images | 3200 |
-| NoisyLR Images | 3200 |
-| NoisyLR Resolution | 128 × 128 |
-| Ground Truth Resolution | 256 × 256 |
-| Upscaling Factor | 2× |
+The degraded inputs may contain intensity values outside the ground-truth `[0,1]` range as a result of the degradation process.
+
+---
+
+## Experimental Results
+
+The model was trained for **10 epochs** and evaluated on a held-out validation set containing **320 paired images**.
+
+| Metric | Validation Result | Interpretation |
+|---|---:|---|
+| **PSNR** | **27.01 dB** | Higher is better |
+| **SSIM** | **0.7212** | Higher is better |
+| **LPIPS** | **0.3119** | Lower is better |
+| **Validation Samples** | **320** | Held-out evaluation set |
+
+These metrics evaluate complementary aspects of restoration quality:
+
+- **PSNR** measures reconstruction fidelity.
+- **SSIM** measures structural similarity.
+- **LPIPS** measures perceptual similarity.
+
+---
+
+## Qualitative Restoration Result
+
+![KLA Restoration Result](outputs/KLA_real_restoration.png)
+
+**Degraded NoisyLR → Restored Output → Ground Truth**
+
+For the displayed example:
+
+| Metric | Result |
+|---|---:|
+| **PSNR** | **31.74 dB** |
+| **SSIM** | **0.939** |
+
+The qualitative comparison demonstrates substantial suppression of input degradation while reconstructing the image from **128×128 to 256×256 resolution**.
+
+---
+
+## Inference Performance
+
+Inference performance was measured on an **NVIDIA Tesla T4 GPU** after GPU warm-up.
+
+| Performance Metric | Measured Result |
+|---|---:|
+| **Mean Inference Time** | **9.33 ms/image** |
+| **Median Inference Time** | **6.89 ms/image** |
+| **Throughput** | **107.13 FPS** |
+| **Model Parameters** | **~2.77M** |
+
+> Inference measurements reported above were obtained on an NVIDIA Tesla T4 and do not represent the official KLA H100 benchmark.
+
+---
+
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| **Deep Learning Framework** | PyTorch |
+| **Programming Language** | Python |
+| **Training Platform** | Google Colab |
+| **Training GPU** | NVIDIA Tesla T4 |
+| **Image Processing** | NumPy / scikit-image |
+| **Perceptual Evaluation** | LPIPS |
+| **Architecture** | Noise-Conditioned U-Net + PixelShuffle |
 
 ---
 
@@ -184,61 +243,146 @@ train/
 ```text
 Arshiya_KLA_PS01/
 │
-├── README.md
-├── requirements.txt
-├── kla_best_model.pt
-│
 ├── src/
-│   └── ...
+│   ├── train.py
+│   ├── evaluate.py
+│   ├── model.py
+│   ├── losses.py
+│   ├── noise_estimator.py
+│   ├── degrade.py
+│   └── make_demo_figure.py
 │
-└── outputs/
-    └── KLA_real_restoration.png
+├── outputs/
+│   └── KLA_real_restoration.png
+│
+├── kla_best_model.pt
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## Trained Model
+## Training
 
-The repository includes the trained model weights:
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Prepare Dataset
+
+Organize the paired training data as:
+
+```text
+train/
+├── GT/
+└── NoisyLR/
+```
+
+The filenames in `GT` and `NoisyLR` should correspond to one another.
+
+### 3. Train Model
+
+```bash
+python src/train.py \
+    --data_dir /path/to/train \
+    --model_size small \
+    --epochs 10 \
+    --batch_size 4 \
+    --lr 0.0001 \
+    --output kla_best_model.pt
+```
+
+The trained weights are stored as:
 
 ```text
 kla_best_model.pt
 ```
 
-The final checkpoint corresponds to the model selected using validation performance after **10 training epochs**.
+---
+
+## Evaluation / Inference
+
+Run the evaluation pipeline using:
+
+```bash
+python src/evaluate.py \
+    --input_dir /path/to/test/images \
+    --output_dir /path/to/restored/images
+```
+
+The trained model restores degraded low-resolution inputs and produces reconstructed high-resolution outputs.
 
 ---
 
-## Key Features
+## Experimental Configuration
 
-- Joint image denoising and 2× super-resolution
-- Noise-aware restoration architecture
-- Dedicated noise-estimation module
-- U-Net-based restoration backbone
-- Confidence prediction branch
-- PixelShuffle-based upscaling
-- Approximately **2.77 million parameters**
-- GPU inference at approximately **107 FPS** on Tesla T4
-- Quantitative evaluation using PSNR, SSIM, and LPIPS
+| Parameter | Configuration |
+|---|---|
+| **Available Paired Samples** | 3,200 |
+| **Validation Samples** | 320 |
+| **Training Epochs** | 10 |
+| **Input Resolution** | 128 × 128 |
+| **Output Resolution** | 256 × 256 |
+| **Upscaling Factor** | 2× |
+| **Model Parameters** | ~2.77M |
+| **Training GPU** | NVIDIA Tesla T4 |
+| **Framework** | PyTorch |
 
 ---
 
-## Final Performance Summary
+## Design Objectives
+
+### 1. Restoration Quality
+
+Suppress image degradation while preserving semiconductor structures and boundaries.
+
+### 2. Super-Resolution
+
+Reconstruct a **256×256 high-resolution image** from a **128×128 degraded input**.
+
+### 3. Noise Adaptation
+
+Condition the restoration process on estimated degradation information rather than applying identical processing to every input.
+
+### 4. Computational Efficiency
+
+Maintain a lightweight architecture with approximately **2.77M parameters** and fast GPU inference.
+
+### 5. Reliability Estimation
+
+Generate an auxiliary confidence map alongside the restored image.
+
+---
+
+## Summary
+
+The proposed pipeline integrates:
+
+**Noise Estimation → Noise-Conditioned Restoration → 2× Super-Resolution → Confidence Prediction**
+
+The trained model achieved:
+
+| Result | Value |
+|---|---:|
+| **Validation PSNR** | **27.01 dB** |
+| **Validation SSIM** | **0.7212** |
+| **Validation LPIPS** | **0.3119** |
+| **Mean Inference Time** | **9.33 ms/image** |
+| **Throughput** | **107.13 FPS** |
+| **Model Size** | **~2.77M parameters** |
+
+---
 
 <div align="center">
 
-| PSNR | SSIM | LPIPS | Throughput |
-|:---:|:---:|:---:|:---:|
-| **27.01 dB** | **0.7212** | **0.3119** | **107.13 FPS** |
+### KLA Image Restoration & Super-Resolution
 
-</div>
+**KLA Hackathon 2026 — PS01**
 
----
+**Team: YOUR_TEAM_NAME**
 
-<div align="center">
-
-### KLA Hackathon 2026 — PS01
-
-**Team [YOUR TEAM NAME]**
+**Arshiya Agarwal | SECOND_MEMBER_NAME**
 
 </div>
