@@ -47,7 +47,7 @@ def main():
     parser.add_argument("--input_dir", required=True, help="Directory of degraded input images")
     parser.add_argument("--output_dir", required=True, help="Where to save restored outputs")
     parser.add_argument("--model_size", choices=["small", "large"], default="small")
-    parser.add_argument("--weights", default=None, help="Path to trained .pt weights (optional)")
+    parser.add_argument("--weights", default="kla_best_model.pt", help="Path to trained model weights")
     parser.add_argument("--gt_dir", default=None, help="Directory of ground-truth images for metrics")
     args = parser.parse_args()
 
