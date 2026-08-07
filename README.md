@@ -375,7 +375,7 @@ The trained model achieved:
 
 ### KLA Image Restoration & Super-Resolution
 
-**Semicon Hackathon 2026 — PS02**
+**KLA 2026 — PS01**
 
 **Team: NanoSight**
 
