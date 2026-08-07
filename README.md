@@ -8,7 +8,7 @@
 
 **Arshiya Agarwal | Minal Pramod Borkar | Srujan Pratap Powar | Aadya Priyadarshi**
 
-Semicon Hackathon 2026 — PS02
+KLA 2026 — PS01
 
 </div>
 
